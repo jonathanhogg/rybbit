@@ -1,6 +1,6 @@
 import { betterAuth } from "better-auth";
 import { APIError, createAuthMiddleware, getSessionFromCtx } from "better-auth/api";
-import { admin, captcha, emailOTP, mcp, organization } from "better-auth/plugins";
+import { admin, captcha, emailOTP, mcp, organization, genericOAuth } from "better-auth/plugins";
 import { createAccessControl } from "better-auth/plugins/access";
 import { adminAc, defaultStatements, memberAc, ownerAc } from "better-auth/plugins/organization/access";
 import { ALL_SCOPE_STRINGS, OIDC_STANDARD_SCOPES } from "./scopes.js";
@@ -249,6 +249,18 @@ const pluginList = [
       }),
     ]
     : []),
+  genericOAuth({
+    config: [
+      {
+        providerId: "oidc",
+        clientId: process.env.OIDC_CLIENT_ID!,
+        clientSecret: process.env.OIDC_CLIENT_SECRET!,
+        discoveryUrl: process.env.OIDC_DISCOVERY_URL!,
+        redirectURI: process.env.BASE_URL + "/api/auth/oauth2/callback/oidc",
+        scopes: ["openid", "profile", "email", "offline_access"],
+      },
+    ],
+  }),
 ];
 
 export const auth = betterAuth({

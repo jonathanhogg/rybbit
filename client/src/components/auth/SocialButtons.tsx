@@ -1,9 +1,9 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { SiGithub } from "@icons-pack/react-simple-icons";
+import { SiGithub, SiOpenid } from "@icons-pack/react-simple-icons";
 import { authClient } from "@/lib/auth";
-import { IS_CLOUD } from "@/lib/const";
+import { IS_CLOUD, IS_OIDC_ENABLED, OIDC_NAME } from "@/lib/const";
 import { useExtracted } from "next-intl";
 import Image from "next/image";
 
@@ -17,7 +17,7 @@ interface SocialButtonsProps {
 export function SocialButtons({ onError, callbackURL, mode = "signin", className = "" }: SocialButtonsProps) {
   const t = useExtracted();
 
-  if (!IS_CLOUD) return null;
+  if (!(IS_CLOUD || IS_OIDC_ENABLED)) return null;
 
   const handleSocialAuth = async (provider: "google" | "github" | "twitter") => {
     try {
@@ -32,17 +32,45 @@ export function SocialButtons({ onError, callbackURL, mode = "signin", className
     }
   };
 
+  const handleOpenIdAuth = async (providerId: "oidc") => {
+    try {
+      await authClient.signIn.oauth2({
+        providerId,
+        ...(callbackURL ? { callbackURL } : {}),
+      });
+    } catch (error) {
+      onError(String(error));
+    }
+  };
+
   return (
     <>
       <div className={`flex flex-col gap-2 ${className}`}>
-        <Button type="button" onClick={() => handleSocialAuth("google")} className="h-11">
-          <Image src="/crawlers/Google.svg" alt="Google" width={16} height={16} />
-          {t("Continue with Google")}
-        </Button>
-        <Button type="button" onClick={() => handleSocialAuth("github")} className="h-11">
-          <SiGithub />
-          {t("Continue with GitHub")}
-        </Button>
+        {IS_CLOUD && (
+          <>
+            <Button type="button" onClick={() => handleSocialAuth("google")} className="h-11">
+              <Image src="/crawlers/Google.svg" alt="Google" width={16} height={16} />
+              {t("Continue with Google")}
+            </Button>
+            <Button type="button" onClick={() => handleSocialAuth("github")} className="h-11">
+              <SiGithub />
+              {t("Continue with GitHub")}
+            </Button>
+          </>
+        )}
+        {IS_OIDC_ENABLED && (
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => handleOpenIdAuth("oidc")}
+              className="transition-all duration-300 hover:bg-muted bg-neutral-800/50 border-neutral-700"
+            >
+              <SiOpenid />
+              {OIDC_NAME}
+            </Button>
+          </>
+        )}
       </div>
       <div className="relative flex items-center text-xs uppercase">
         <div className="flex-1 border-t border-neutral-200 dark:border-neutral-800" />
